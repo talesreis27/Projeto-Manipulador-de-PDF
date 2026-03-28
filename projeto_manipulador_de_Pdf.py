@@ -18,18 +18,15 @@ class ManipuladorPDF:
                 print(f"-> Lendo {file_name}: Total de páginas no arquivo: {len(reader.pages)}")
 
                 #Validacao dos indices do pdf
-                valid_pages = [p for p in pages if isinstance(p,int)]
+                valid_pages = [p for p in pages if isinstance(p,int) and 0 <= p < len(reader.pages)] 
                 if not valid_pages:
                     print(f"[ERRO]: O ficheiro '{file_name}' nao tem paginas validas.")
                     continue
                 if len(valid_pages) < len(pages):
                     print(f"[AVISO]: foram removidas paginas invalidas do ficheiro '{file_name}'.")
-                for indices in valid_pages:
-                    if 0 <= indices < len(reader.pages):
-                        self.writer.add_page(reader.pages[indices])
-                        print(f"   + Página {indices} adicionada ao Writer.")
-                    else:
-                        print(f"[ERRO]: O indice da pagina '{indices}' no ficheiro '{file_name}' esta fora do intervalo.")
+                for indice in valid_pages:
+                        self.writer.add_page(reader.pages[indice])
+                        print(f"   + Página {indice} adicionada ao Writer.")
             # O bloco try-except e usado para capturar e exibir erros que possam ocorrer durante a leitura do ficheiro pdf, como problemas de formato ou arquivos corrompidos.
             except Exception as e:
                     print(f"[ERRO]: Erro ao ler o ficheiro '{file_name}': {str(e)}")
@@ -56,9 +53,27 @@ class ManipuladorPDF:
             print(f"[ERRO]: Erro ao aplicar a marca d'agua: {str(e)}")
     # O metodo salvar_pdf recebe o nome do ficheiro de saida, e salva o novo ficheiro pdf com as paginas selecionadas e a marca d'agua aplicada.  
     def salvar_pdf(self, output_filename):
-        with open(output_filename, 'wb') as f:
-            self.writer.write(f)
-        print (f"PDF processado e salvo como '{output_filename}' com sucesso.")
+        if not output_filename:
+            print("[ERRO]: O nome do ficheiro de saída não pode ser vazio.")
+            return False
+        if os.path.exists(output_filename):
+            print(f"[AVISO]: O ficheiro '{output_filename}' já existe e será sobrescrito.")
+        else:   
+             print(f"Salvando o PDF processado como '{output_filename}'...")
+        try:   
+            with open(output_filename, 'wb') as f:
+                self.writer.write(f)
+            print (f"PDF processado e salvo como '{output_filename}' com sucesso.")
+            return True
+        except PermissionError:
+            print(f"[ERRO]: Permissão negada ao salvar o ficheiro '{output_filename}'. Verifique as permissões do arquivo ou se ele está aberto em outro programa.")
+        except IsADirectoryError:
+            print(f"[ERRO]: O caminho '{output_filename}' é um diretório. Por favor, forneça um nome de arquivo válido.")   
+        except OSError as e:
+            print(f"[ERRO]: Ocorreu um erro ao salvar o ficheiro '{output_filename}': {str(e)}")
+        except Exception as e:
+            print(f"[ERRO]: Ocorreu um erro inesperado ao salvar o ficheiro '{output_filename}': {str(e)}")
+        return False
 
 #Exemplo de uso
 if __name__ == "__main__":
@@ -69,7 +84,7 @@ if __name__ == "__main__":
     }
     manipulador = ManipuladorPDF()
     manipulador.processar_pdf(estrutura_dados)
-    manipulador.aplica_watermark('pdf_watermark.pdf', [0, 1, 2, 3, 4, 5, 6])
+    manipulador.aplica_watermark('pdf_watermark.pdf', [0, 2, 5])
     manipulador.salvar_pdf('PDF_final.pdf')
 
     #DESAFIO 
